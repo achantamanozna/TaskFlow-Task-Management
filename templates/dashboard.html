@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · TaskFlow{% endblock %}
+{% block content %}
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('dashboard') }}">Task<span>Flow</span></a>
+    <div class="user-area">
+      <span>Hi, {{ name }} 👋</span>
+      <a class="logout" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+  </header>
+
+  <main class="dashboard">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">TASK MANAGEMENT</p>
+        <h1>Stay on top of your day.</h1>
+        <p class="muted">Create, track and complete your tasks with ease.</p>
+      </div>
+      <button class="btn primary" onclick="openModal()">+ Add Task</button>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><span>Total</span><strong id="totalCount">{{ tasks|length }}</strong></div>
+      <div class="stat"><span>Pending</span><strong id="pendingCount">{{ tasks|selectattr('status', 'equalto', 'Pending')|list|length }}</strong></div>
+      <div class="stat"><span>Completed</span><strong id="completedCount">{{ tasks|selectattr('status', 'equalto', 'Completed')|list|length }}</strong></div>
+    </section>
+
+    <section class="toolbar">
+      <input id="searchInput" class="search" type="search" placeholder="Search tasks...">
+      <select id="statusFilter">
+        <option value="All">All tasks</option>
+        <option value="Pending">Pending</option>
+        <option value="Completed">Completed</option>
+      </select>
+      <select id="priorityFilter">
+        <option value="All">All priorities</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+    </section>
+
+    <section id="taskGrid" class="task-grid">
+      {% for task in tasks %}
+      <article class="task-card {{ 'done' if task.status == 'Completed' else '' }}"
+               data-title="{{ task.title|lower }}"
+               data-status="{{ task.status }}"
+               data-priority="{{ task.priority }}">
+        <div class="task-top">
+          <span class="priority {{ task.priority|lower }}">{{ task.priority }}</span>
+          <div class="actions">
+            <a href="{{ url_for('edit_task', task_id=task.id) }}" title="Edit">✎</a>
+            <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirm('Delete this task?')">
+              <button type="submit" title="Delete">×</button>
+            </form>
+          </div>
+        </div>
+        <h3>{{ task.title }}</h3>
+        {% if task.description %}<p>{{ task.description }}</p>{% endif %}
+        <div class="task-meta">
+          <span>📅 {{ task.due_date if task.due_date else 'No due date' }}</span>
+          <span class="status {{ task.status|lower }}">{{ task.status }}</span>
+        </div>
+        <form method="POST" action="{{ url_for('toggle_task', task_id=task.id) }}">
+          <button class="complete-btn" type="submit">
+            {% if task.status == 'Completed' %}↩ Mark Pending{% else %}✓ Mark Complete{% endif %}
+          </button>
+        </form>
+      </article>
+      {% else %}
+      <div class="empty">
+        <div class="empty-icon">✓</div>
+        <h2>No tasks yet</h2>
+        <p>Add your first task to get started.</p>
+        <button class="btn primary" onclick="openModal()">Add Your First Task</button>
+      </div>
+      {% endfor %}
+    </section>
+  </main>
+</div>
+
+<div id="taskModal" class="modal">
+  <div class="modal-card">
+    <div class="modal-head"><h2>Add a task</h2><button onclick="closeModal()">×</button></div>
+    <form method="POST" action="{{ url_for('add_task') }}" class="form">
+      <label>Task title
+        <input name="title" placeholder="e.g. Finish Python assignment" required>
+      </label>
+      <label>Description
+        <textarea name="description" rows="3" placeholder="Add a little detail..."></textarea>
+      </label>
+      <div class="two-col">
+        <label>Due date
+          <input type="date" name="due_date">
+        </label>
+        <label>Priority
+          <select name="priority">
+            <option>High</option>
+            <option selected>Medium</option>
+            <option>Low</option>
+          </select>
+        </label>
+      </div>
+      <button class="btn primary full" type="submit">Create Task</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
